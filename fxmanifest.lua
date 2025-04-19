@@ -2,7 +2,7 @@ fx_version 'cerulean'
 game 'gta5'
 lua54 'yes'
 
-version '2.0.2'
+version '2.1.0'
 
 client_scripts {
 	"client/gizmo.lua",

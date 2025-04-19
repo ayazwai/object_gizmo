@@ -5,7 +5,7 @@
 local dataview = require 'client.dataview'
 
 local enableScale = false -- allow scaling mode. doesnt scale collisions and resets when physics are applied it seems
-
+local isCursorActive = false
 local gizmoEnabled = false
 local currentMode = 'translate'
 local isRelative = false
@@ -79,10 +79,17 @@ local function gizmoLoop(entity)
     else
         SetEntityDrawOutline(entity, true)
     end
-
+    isCursorActive = true
     while gizmoEnabled and DoesEntityExist(entity) do
         Wait(0)
-
+        if IsControlJustPressed(0, 47) then -- G
+            if isCursorActive then
+                LeaveCursorMode()
+            else
+                EnterCursorMode()
+            end
+            isCursorActive = not isCursorActive
+        end
         DisableControlAction(0, 24, true)  -- lmb
         DisableControlAction(0, 25, true)  -- rmb
         DisableControlAction(0, 140, true) -- r
@@ -96,7 +103,7 @@ local function gizmoLoop(entity)
             applyEntityMatrix(entity, matrixBuffer)
         end
     end
-
+    isCursorActive = false
     LeaveCursorMode()
 
     if DoesEntityExist(entity) then
@@ -108,6 +115,14 @@ local function gizmoLoop(entity)
     currentEntity = nil
 end
 
+local function GetVectorText(vectorType) 
+    if not currentEntity then return 'ERR_NO_ENTITY_' .. (vectorType or "UNK") end
+    local label = (vectorType == "coords" and "Position" or "Rotation")
+    local vec = (vectorType == "coords" and GetEntityCoords(currentEntity) or GetEntityRotation(currentEntity))
+    return ('%s: %.2f, %.2f, %.2f'):format(label, vec.x, vec.y, vec.z)
+end
+
+
 local function textUILoop()
     CreateThread(function()
         while gizmoEnabled do
@@ -115,6 +130,9 @@ local function textUILoop()
             local scaleText = (enableScale and '[S]     - Scale Mode  \n') or ''
             lib.showTextUI(
                 ('Current Mode: %s | %s  \n'):format(currentMode, (isRelative and 'Relative') or 'World') ..
+                GetVectorText("coords") .. '  \n' ..
+                GetVectorText("rotation") .. '  \n' ..
+                '[G]     - ' .. (isCursorActive and "Disable" or "Enable") .. ' Cursor  \n' ..
                 '[W]     - Translate Mode  \n' ..
                 '[R]     - Rotate Mode  \n' ..
                 scaleText ..
