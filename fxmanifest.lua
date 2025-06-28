@@ -14,6 +14,7 @@ shared_scripts {
 }
 
 files {
+	'locales/*.json',
 	'client/dataview.lua',
 }
 

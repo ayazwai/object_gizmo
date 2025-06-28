@@ -11,6 +11,9 @@ local currentMode = 'translate'
 local isRelative = false
 local currentEntity
 
+-- LOCALE INITIALISATION
+lib.locale()
+
 -- FUNCTIONS
 
 local function normalize(x, y, z)
@@ -73,22 +76,24 @@ local function gizmoLoop(entity)
     end
 
     EnterCursorMode()
+    isCursorActive = true
 
     if IsEntityAPed(entity) then
         SetEntityAlpha(entity, 200)
     else
         SetEntityDrawOutline(entity, true)
     end
-    isCursorActive = true
+    
     while gizmoEnabled and DoesEntityExist(entity) do
         Wait(0)
         if IsControlJustPressed(0, 47) then -- G
             if isCursorActive then
                 LeaveCursorMode()
+                isCursorActive = false
             else
                 EnterCursorMode()
+                isCursorActive = true
             end
-            isCursorActive = not isCursorActive
         end
         DisableControlAction(0, 24, true)  -- lmb
         DisableControlAction(0, 25, true)  -- rmb
@@ -103,8 +108,11 @@ local function gizmoLoop(entity)
             applyEntityMatrix(entity, matrixBuffer)
         end
     end
+    
+    if isCursorActive then
+        LeaveCursorMode()
+    end
     isCursorActive = false
-    LeaveCursorMode()
 
     if DoesEntityExist(entity) then
         if IsEntityAPed(entity) then SetEntityAlpha(entity, 255) end
@@ -122,28 +130,31 @@ local function GetVectorText(vectorType)
     return ('%s: %.2f, %.2f, %.2f'):format(label, vec.x, vec.y, vec.z)
 end
 
-
 local function textUILoop()
     CreateThread(function()
         while gizmoEnabled do
             Wait(100)
-            local scaleText = (enableScale and '[S]     - Scale Mode  \n') or ''
+
+            local scaleText = (enableScale and '[S] - ' .. locale("scale_mode") .. '  \n') or ''
+            local modeLine = 'Current Mode: ' .. currentMode .. ' | ' .. (isRelative and 'Relative' or 'World') .. '  \n'
+
             lib.showTextUI(
-                ('Current Mode: %s | %s  \n'):format(currentMode, (isRelative and 'Relative') or 'World') ..
+                modeLine ..
                 GetVectorText("coords") .. '  \n' ..
                 GetVectorText("rotation") .. '  \n' ..
-                '[G]     - ' .. (isCursorActive and "Disable" or "Enable") .. ' Cursor  \n' ..
-                '[W]     - Translate Mode  \n' ..
-                '[R]     - Rotate Mode  \n' ..
+                '[G]     - ' .. (isCursorActive and locale("disable_cursor") or locale("enable_cursor")) .. '  \n' ..
+                '[W]     - ' .. locale("translate_mode") .. '  \n' ..
+                '[R]     - ' .. locale("rotate_mode") .. '  \n' ..
                 scaleText ..
-                '[Q]     - Relative/World  \n' ..
-                '[LALT]  - Snap To Ground  \n' ..
-                '[ENTER] - Done Editing  \n'
+                '[Q]     - ' .. locale("toggle_space") .. '  \n' ..
+                '[LALT]  - ' .. locale("snap_to_ground") .. '  \n' ..
+                '[ENTER] - ' .. locale("done_editing") .. '  \n'
             )
         end
         lib.hideTextUI()
     end)
 end
+
 
 -- EXPORTS
 
@@ -166,7 +177,7 @@ exports("useGizmo", useGizmo)
 
 lib.addKeybind({
     name = '_gizmoSelect',
-    description = 'Selects the currently highlighted gizmo',
+    description = locale("select_gizmo_description"),
     defaultMapper = 'MOUSE_BUTTON',
     defaultKey = 'MOUSE_LEFT',
     onPressed = function(self)
@@ -180,7 +191,7 @@ lib.addKeybind({
 
 lib.addKeybind({
     name = '_gizmoTranslation',
-    description = 'Sets mode of the gizmo to translation',
+    description = locale("translation_mode_description"),
     defaultKey = 'W',
     onPressed = function(self)
         if not gizmoEnabled then return end
@@ -194,7 +205,7 @@ lib.addKeybind({
 
 lib.addKeybind({
     name = '_gizmoRotation',
-    description = 'Sets mode for the gizmo to rotation',
+    description = locale("rotation_mode_description"),
     defaultKey = 'R',
     onPressed = function(self)
         if not gizmoEnabled then return end
@@ -208,7 +219,7 @@ lib.addKeybind({
 
 lib.addKeybind({
     name = '_gizmoLocal',
-    description = 'toggle gizmo to be local to the entity instead of world',
+    description = locale("toggle_space_description"),
     defaultKey = 'Q',
     onPressed = function(self)
         if not gizmoEnabled then return end
@@ -222,7 +233,7 @@ lib.addKeybind({
 
 lib.addKeybind({
     name = 'gizmoclose',
-    description = 'close gizmo',
+    description = locale("close_gizmo_description"),
     defaultKey = 'RETURN',
     onPressed = function(self)
         if not gizmoEnabled then return end
@@ -232,7 +243,7 @@ lib.addKeybind({
 
 lib.addKeybind({
     name = 'gizmoSnapToGround',
-    description = 'snap current gizmo object to floor/surface',
+    description = locale("snap_to_ground_description"),
     defaultKey = 'LMENU',
     onPressed = function(self)
         if not gizmoEnabled then return end
@@ -243,7 +254,7 @@ lib.addKeybind({
 if enableScale then
     lib.addKeybind({
         name = '_gizmoScale',
-        description = 'Sets mode for the gizmo to scale',
+        description = locale("scale_mode_description"),
         defaultKey = 'S',
         onPressed = function(self)
             if not gizmoEnabled then return end
