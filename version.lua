@@ -1,1 +1,0 @@
-lib.versionCheck('Demigod916/object_gizmo')

@@ -3,8 +3,6 @@
 -- AvarianKnight: https://forum.cfx.re/t/allow-drawgizmo-to-be-used-outside-of-fxdk/5091845/8?u=demi-automatic
 
 local dataview = require 'client.dataview'
-
-local enableScale = false -- allow scaling mode. doesnt scale collisions and resets when physics are applied it seems
 local isCursorActive = false
 local gizmoEnabled = false
 local currentMode = 'translate'
@@ -54,11 +52,9 @@ local function applyEntityMatrix(entity, view)
     local x3, y3, z3 = view:GetFloat32(32), view:GetFloat32(36), view:GetFloat32(40)
     local tx, ty, tz = view:GetFloat32(48), view:GetFloat32(52), view:GetFloat32(56)
 
-    if not enableScale then
-        x1, y1, z1 = normalize(x1, y1, z1)
-        x2, y2, z2 = normalize(x2, y2, z2)
-        x3, y3, z3 = normalize(x3, y3, z3)
-    end
+    x1, y1, z1 = normalize(x1, y1, z1)
+    x2, y2, z2 = normalize(x2, y2, z2)
+    x3, y3, z3 = normalize(x3, y3, z3)
 
     SetEntityMatrix(entity,
         x1, y1, z1,
@@ -86,15 +82,6 @@ local function gizmoLoop(entity)
     
     while gizmoEnabled and DoesEntityExist(entity) do
         Wait(0)
-        if IsControlJustPressed(0, 47) then -- G
-            if isCursorActive then
-                LeaveCursorMode()
-                isCursorActive = false
-            else
-                EnterCursorMode()
-                isCursorActive = true
-            end
-        end
         DisableControlAction(0, 24, true)  -- lmb
         DisableControlAction(0, 25, true)  -- rmb
         DisableControlAction(0, 140, true) -- r
@@ -134,19 +121,10 @@ local function textUILoop()
     CreateThread(function()
         while gizmoEnabled do
             Wait(100)
-
-            local scaleText = (enableScale and '[S] - ' .. locale("scale_mode") .. '  \n') or ''
-            local modeLine = 'Current Mode: ' .. currentMode .. ' | ' .. (isRelative and 'Relative' or 'World') .. '  \n'
-
             lib.showTextUI(
-                modeLine ..
-                GetVectorText("coords") .. '  \n' ..
-                GetVectorText("rotation") .. '  \n' ..
-                '[G]     - ' .. (isCursorActive and locale("disable_cursor") or locale("enable_cursor")) .. '  \n' ..
-                '[W]     - ' .. locale("translate_mode") .. '  \n' ..
+                '[Q]  - ' .. locale('relative') .. (isRelative and (' (' .. locale('local') .. ')') or (' (' .. locale('world') .. ')')) .. '  \n' ..
+                '[W]  - ' .. locale("translate_mode") .. '  \n' ..
                 '[R]     - ' .. locale("rotate_mode") .. '  \n' ..
-                scaleText ..
-                '[Q]     - ' .. locale("toggle_space") .. '  \n' ..
                 '[LALT]  - ' .. locale("snap_to_ground") .. '  \n' ..
                 '[ENTER] - ' .. locale("done_editing") .. '  \n'
             )
@@ -250,19 +228,3 @@ lib.addKeybind({
         PlaceObjectOnGroundProperly_2(currentEntity)
     end,
 })
-
-if enableScale then
-    lib.addKeybind({
-        name = '_gizmoScale',
-        description = locale("scale_mode_description"),
-        defaultKey = 'S',
-        onPressed = function(self)
-            if not gizmoEnabled then return end
-            currentMode = 'Scale'
-            ExecuteCommand('+gizmoScale')
-        end,
-        onReleased = function (self)
-            ExecuteCommand('-gizmoScale')
-        end
-    })
-end

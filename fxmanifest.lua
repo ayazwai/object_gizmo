@@ -18,8 +18,6 @@ files {
 	'client/dataview.lua',
 }
 
-server_script 'version.lua'
-
 dependencies {
 	'ox_lib'
 }
